@@ -14,10 +14,10 @@
             </StackPanel>
         </DataTemplate>
     </Window.Resources>
-    <Grid>
+    <Grid Margin="20">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -25,15 +25,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <ComboBox
-            Grid.Row="0"
-            Grid.Column="0"
             x:Name="productComboBox"
             ItemsSource="{Binding ProductsList}"
             ItemTemplate="{StaticResource listTemplate}"
-            SelectedValuePath="ProductId"
-            SelectedIndex="0" 
+            SelectedItem="{Binding SelectedProduct}"
             Margin="10"/>
-        <Grid Grid.Row="1" Grid.Column="0" Margin="10">
+        <Grid Grid.Row="1" Grid.Column="0" Margin="10" DataContext="{Binding SelectedItem, ElementName=productComboBox}" >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -44,23 +41,33 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-
             <TextBlock Text="ProductID" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
-            <TextBlock Text="{Binding SelectedItem.ProductId, ElementName=productComboBox}" Grid.Row="0" Grid.Column="1" Margin="0,5"/>
+            <TextBlock Text="{Binding ProductId}" Grid.Row="0" Grid.Column="1" Margin="0,5"/>
             <TextBlock Text="ProductName" Grid.Row="1" Grid.Column="0" Margin="0,5"/>
-            <TextBlock Text="{Binding SelectedItem.ProductName, ElementName=productComboBox}" Grid.Row="1" Grid.Column="1" Margin="0,5"/>
+            <TextBlock Text="{Binding ProductName}" Grid.Row="1" Grid.Column="1" Margin="0,5"/>
             <TextBlock Text="Category" Grid.Row="2" Grid.Column="0" Margin="0,5"/>
-            <TextBlock Text="{Binding SelectedItem.Category.CategoryName, ElementName=productComboBox}" Grid.Row="2" Grid.Column="1" Margin="0,5"/>
+            <TextBlock Text="{Binding Category}" Grid.Row="2" Grid.Column="1" Margin="0,5"/>
             <TextBlock Text="Supplier" Grid.Row="3" Grid.Column="0" Margin="0,5"/>
-            <TextBlock Text="{Binding SelectedItem.Supplier.ContactName, ElementName=productComboBox}" Grid.Row="3" Grid.Column="1" Margin="0,5"/>
+            <TextBlock Text="{Binding Supplier}" Grid.Row="3" Grid.Column="1" Margin="0,5"/>
         </Grid>
 
         <Grid Grid.Row="2" Grid.Column="0" Margin="10">
-            <Button Grid.Row="2" Grid.Column="0" Content="Abandonner le produit" Margin="10" Command="{Binding RemoveCommand}"/>
+            <Button Content="Abandonner le produit sélectionné" Margin="10" Command="{Binding RemoveCommand}" />
+        </Grid>
+        <Grid Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Nombre de Produits par Pays ayant été vendu au moins une fois" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+            <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding ProductsByCountry}" CanUserAddRows="False" Grid.Row="1">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Country" Binding="{Binding Country}" />
+                    <DataGridTextColumn Header="Nb" Binding="{Binding ProductCount}" />
+                    <DataGridTextColumn Header="" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
         </Grid>
 
-        <Grid Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Margin="10">
-            
-        </Grid>
     </Grid>
 </Window>

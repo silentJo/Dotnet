@@ -1,82 +1,90 @@
-﻿using System.Collections.ObjectModel;
+﻿using ExamenJan2023.Models;
+using ExamenJan2023.ViewModels;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows;
-using System.Windows.Controls;
-using ExamenJan2023.Models;
-using WpfApplication1.ViewModels;
 
-namespace ExamenJan2023.ViewModels
+internal class ProductsVM : INotifyPropertyChanged
 {
-    internal class ProductsVM : INotifyPropertyChanged
+    private NorthwindContext context = new NorthwindContext();
+    private ObservableCollection<ProductModel>? _productsList;
+    private ProductModel? _selectedProduct;
+    private ObservableCollection<object>? _productsByCountry;
+
+    public ObservableCollection<ProductModel>? ProductsList
     {
-        private NorthwindContext context = new NorthwindContext();
-        private ObservableCollection<ProductModel>? _productsList;
-        private ProductModel? _selectedProduct;
-        public event EventHandler ProductRemoved;
+        get => _productsList ??= LoadProducts();
+    }
 
-        public ObservableCollection<ProductModel>? ProductsList
+    public ObservableCollection<object>? ProductsByCountry
+    {
+        get => _productsByCountry ??= LoadProductsByCountry();
+        set
         {
-            get => _productsList ??= LoadProducts();
-            set
+            if (_productsByCountry != value)
             {
-                if (_productsList != value)
-                {
-                    _productsList = value;
-                    OnPropertyChanged();
-                }
+                _productsByCountry = value;
+                OnPropertyChanged(nameof(ProductsByCountry));
             }
         }
+    }
 
-        public ProductModel? SelectedProduct
+    private DelegateCommand? _removeCommand;
+    public DelegateCommand RemoveCommand
+    {
+        get { return _removeCommand ??= new DelegateCommand(RemoveProduct); }
+    }
+
+    public ProductModel? SelectedProduct
+    {
+        get => _selectedProduct;
+        set
         {
-            get => _selectedProduct;
-            set
+            if (_selectedProduct != value)
             {
-                if (_selectedProduct != value)
-                {
-                    _selectedProduct = value;
-                    OnPropertyChanged();
-                }
+                _selectedProduct = value;
+                OnPropertyChanged(nameof(SelectedProduct));
             }
         }
+    }
 
-        private DelegateCommand? _removeCommand;
-        public DelegateCommand RemoveCommand 
+    private void RemoveProduct()
+    {
+        if (_selectedProduct != null && ProductsList != null)
         {
-            get { return _removeCommand ??= new DelegateCommand(RemoveProduct); }
+            _selectedProduct.Product.Discontinued = true;
+            ProductsList?.Remove(_selectedProduct);
+            context.SaveChanges();
+            OnPropertyChanged(nameof(ProductsList));
+            ProductsByCountry = LoadProductsByCountry();
         }
+    }
 
-        private void RemoveProduct()
-        {
-            if (_selectedProduct != null)
-            {
-                _selectedProduct.Discontinued = true;
-                ProductsList?.Remove(_selectedProduct);
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-                // Utiliser une nouvelle instance d'ObservableCollection pour déclencher la notification de changement.
-                ProductsList = new ObservableCollection<ProductModel>(ProductsList);
+    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 
-                OnPropertyChanged("SelectedProduct");
+    private ObservableCollection<ProductModel> LoadProducts()
+    {
+        ObservableCollection<ProductModel> localCollection = new ObservableCollection<ProductModel>();
+        foreach (var item in context.Products.Where(p => !p.Discontinued))
+            localCollection.Add(new ProductModel(item));
+        return localCollection;
+    }
 
-                // Déclencher l'événement ProductRemoved
-                ProductRemoved?.Invoke(this, EventArgs.Empty);
-            }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        private ObservableCollection<ProductModel> LoadProducts()
-        {
-            ObservableCollection<ProductModel> localCollection = new ObservableCollection<ProductModel>();
-            foreach (var item in context.Products.Where(p => !p.Discontinued))
-                localCollection.Add(new ProductModel(item));
-            return localCollection;
-        }
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+    private ObservableCollection<object> LoadProductsByCountry()
+    {
+        ObservableCollection<object> result = new ObservableCollection<object>();
+        var productsByCountry = context.Products
+            .Where(p => !p.Discontinued && p.OrderDetails.Any())
+            .GroupBy(p => p.Supplier.Country)
+            .Select(g => new { Country = g.Key, ProductCount = g.Count() })
+            .OrderByDescending(x => x.ProductCount);
+        foreach (var item in productsByCountry)
+            result.Add(new { Country = item.Country, ProductCount = item.ProductCount });
+        return result;
     }
 }
