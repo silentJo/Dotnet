@@ -14,12 +14,20 @@ internal class ProductsVM : INotifyPropertyChanged
 
     public ProductsVM()
     {
-        UpdateCommand = new DelegateCommand(UpdateProduct);
+        
     }
 
     public ObservableCollection<ProductModel>? ProductsList
     {
         get => _productsList ??= LoadProducts();
+        set
+        {
+            if (_productsList != value)
+            {
+                _productsList = value;
+                OnPropertyChanged(nameof(ProductsList));
+            }
+        }
     }
 
     private ObservableCollection<ProductModel> LoadProducts()
@@ -43,17 +51,25 @@ internal class ProductsVM : INotifyPropertyChanged
         }
     }
 
-    public DelegateCommand UpdateCommand { get; }
+    private DelegateCommand? _updateCommand;
+
+    public DelegateCommand UpdateCommand
+    {
+        get { return _updateCommand ??= new DelegateCommand(UpdateProduct); }
+    }
 
     private void UpdateProduct()
     {
-        if (SelectedProduct != null)
+        if (_selectedProduct != null)
         {
-            // Mettez à jour en base de données ici, en utilisant les propriétés de SelectedProduct
-            // Par exemple :
-            // context.Products.First(p => p.ProductId == SelectedProduct.ProductId).ProductName = SelectedProduct.ProductName;
-            // context.Products.First(p => p.ProductId == SelectedProduct.ProductId).QuantityPerUnit = SelectedProduct.Product.QuantityPerUnit;
-            // context.SaveChanges();
+            var productToUpdate = _productsList?.FirstOrDefault(p => p.ProductId == _selectedProduct.ProductId);
+            if (productToUpdate != null)
+            {
+                productToUpdate.ProductName = _selectedProduct.ProductName;
+                productToUpdate.QuantityPerUnit = _selectedProduct.QuantityPerUnit;
+                ProductsList = new ObservableCollection<ProductModel>(_productsList);
+                context.SaveChanges();
+            }
         }
     }
 
