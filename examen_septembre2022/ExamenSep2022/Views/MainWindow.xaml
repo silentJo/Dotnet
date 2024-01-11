@@ -17,40 +17,40 @@
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0" >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid Grid.Column="0">
-                <!--Point 1-->
-                <ListBox Name="itemListBox" ItemsSource="{Binding ProductsList}" ItemTemplate="{StaticResource listboxTemplate}" SelectedItem="{Binding SelectedProduct}" MaxHeight="100">
-                    <ListBox.Template>
-                        <ControlTemplate TargetType="ListBox">
-                            <Border BorderBrush="Black" BorderThickness="1">
-                                <ScrollViewer>
-                                    <ItemsPresenter />
-                                </ScrollViewer>
-                            </Border>
-                        </ControlTemplate>
-                    </ListBox.Template>
-                </ListBox>
-            </Grid>
-            <Grid Grid.Column="1">
-                <!--TODO: Point 3-->
-                
-            </Grid>
+        <Grid Grid.Row="0">
+            <!-- Point 1 - Liste dans la moitié gauche -->
+            <ListBox Name="itemListBox" ItemsSource="{Binding ProductsList}" ItemTemplate="{StaticResource listboxTemplate}" SelectedItem="{Binding SelectedProduct}" MaxHeight="100">
+                <ListBox.Template>
+                    <ControlTemplate TargetType="ListBox">
+                        <Border BorderBrush="Black" BorderThickness="1">
+                            <ScrollViewer>
+                                <ItemsPresenter />
+                            </ScrollViewer>
+                        </Border>
+                    </ControlTemplate>
+                </ListBox.Template>
+            </ListBox>
         </Grid>
+        <Grid Grid.Column="1" Grid.Row="0">
+            <!-- Point 3 - ScrollViewer dans la moitié droite -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="150">
+                <DataGrid Name="salesDataGrid" ItemsSource="{Binding SalesTotals}" AutoGenerateColumns="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Product ID" Binding="{Binding ProductId}" />
+                        <DataGridTextColumn Header="Total Sales" Binding="{Binding TotalSales}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
+        </Grid>
+
         <Grid Grid.Row="1">
-            <!--TODO: Point 2-->
+            <!--Point 2-->
             <StackPanel>
                 <Grid Margin="20">
                     <Grid.ColumnDefinitions>

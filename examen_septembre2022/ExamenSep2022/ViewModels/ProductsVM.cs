@@ -46,6 +46,7 @@ internal class ProductsVM : INotifyPropertyChanged
             if (_selectedProduct != value)
             {
                 _selectedProduct = value;
+                SalesTotals = LoadSalesTotals();
                 OnPropertyChanged(nameof(SelectedProduct));
             }
         }
@@ -69,8 +70,48 @@ internal class ProductsVM : INotifyPropertyChanged
                 productToUpdate.QuantityPerUnit = _selectedProduct.QuantityPerUnit;
                 ProductsList = new ObservableCollection<ProductModel>(_productsList);
                 context.SaveChanges();
+                SalesTotals = LoadSalesTotals();
             }
         }
+    }
+
+    private ObservableCollection<ProductModel>? _salesTotals;
+
+    public ObservableCollection<ProductModel>? SalesTotals
+    {
+        get => _salesTotals;
+        set
+        {
+            if (_salesTotals != value)
+            {
+                _salesTotals = value;
+                OnPropertyChanged(nameof(SalesTotals));
+            }
+        }
+    }
+
+    private ObservableCollection<ProductModel> LoadSalesTotals()
+    {
+        if (_selectedProduct != null)
+        {
+            List<OrderDetail> ordersList = _selectedProduct.OrderDetails?.ToList() ?? new List<OrderDetail>();
+            ObservableCollection<OrderDetail> orders = new ObservableCollection<OrderDetail>(ordersList);
+            ObservableCollection<ProductModel> salesTotals = new ObservableCollection<ProductModel>();
+            foreach (var orderDetail in orders)
+            {
+                decimal totalSales = orderDetail.Quantity * orderDetail.UnitPrice;
+                salesTotals.Add(new ProductModel(_selectedProduct.Product, totalSales));
+            }
+            return salesTotals;
+        }
+        return new ObservableCollection<ProductModel>();
+    }
+
+    private decimal CalculateTotalSales(int productId)
+    {
+        return context.OrderDetails
+            .Where(od => od.ProductId == productId)
+            .Sum(od => od.Quantity * od.UnitPrice);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

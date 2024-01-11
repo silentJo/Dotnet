@@ -7,8 +7,18 @@ namespace ExamenSep2022.ViewModels
     internal class ProductModel : INotifyPropertyChanged
     {
         private readonly Product _product;
+        private decimal _totalSales;
 
-        public ProductModel(Product product) { _product = product; }
+        public ProductModel(Product product)
+        {
+            _product = product;
+        }
+
+        public ProductModel(Product product, decimal totalSales)
+        {
+            _product = product;
+            _totalSales = totalSales;
+        }
 
         public int ProductId
         {
@@ -28,6 +38,24 @@ namespace ExamenSep2022.ViewModels
         }
 
         public string QuantityPerUnit { get { return _product.QuantityPerUnit; } set { _product.QuantityPerUnit = value; } }
+
+        public decimal TotalSales
+        {
+            get { return _totalSales; }
+            set
+            {
+                if (_totalSales != value)
+                {
+                    _totalSales = value;
+                    OnPropertyChanged(nameof(TotalSales));
+                }
+            }
+        }
+
+        public ICollection<OrderDetail> OrderDetails
+        {
+            get { return _product.OrderDetails; }
+        }
 
         public Product Product => _product;
 
