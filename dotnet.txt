@@ -1,0 +1,244 @@
+
+
+
+Ouvrir Visual Studio Community
+	• Créer un projet
+		○ Application WPF
+		○ Nommer le projet
+		○ .NET 6.0
+	• Mise en place MVVM
+		○ Créer un dossier Views
+			§ Glisser MainWindow.xaml dans /Views
+			§ App.xaml : StartupUri="Views/MainWindow.xaml">
+		○ Glisser Northwind4SQLServer.sql à la racine du projet
+			§ Ouvrir Northwind4SQLServer.sql
+				□ Exécuter (flèche verte en haut à gauche)
+					® Local => MSSQLLocalDB => Se connecter
+		○ Outil  => Gestionnaire de package NuGet =>  Gérer les packages NuGet pour la solution
+			§ Parcourir : rechercher 'Entity'
+				□ Microsoft.EntityFrameworkCore (v6.0.26)
+				□ Microsoft.EntityFrameworkCore.Design (v6.0.26)
+				□ Microsoft.EntityFrameworkCore.SQLServer (v6.0.26)
+				□ Microsoft.EntityFrameworkCore.Tools (v6.0.26)
+			§ Parcourir : rechercher 'Proxies'
+				□ Microsoft.EntityFrameworkCore.Proxies (v6.0.26)
+		○ Outils => Gestionnaire de packages NuGet => Console de gestionnaire de package
+			§ Scaffold-DbContext -OutputDir Models 'Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=Northwind' Microsoft.EntityFrameworkCore.SqlServer
+			§ NorthwindContext.cs => ajouter .UseLazyLoadingProxies() à la fin de : optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=Northwind")
+dans la méthode: protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+		○ Créer un dossier ViewModels
+			§ Glisser DelegateCommand.cs dans /ViewModels (depuis les ressources si dispo)
+				□ Attention à ce que le Namespace soit correct !!
+			§ Créer fichier : ProductModel.cs
+				using ExamenJan2023.Models;
+				
+				namespace ExamenJan2023.ViewModels
+				{
+				    internal class ProductModel
+				    {
+				        private readonly Product _product;
+				        public ProductModel(Product product)
+				        {
+				            _product = product;
+				        }
+				        public int ProductId { get { return _product.ProductId; } }
+				        public string ProductName {  get { return _product.ProductName; } }
+				        public int? SupplierId { get { return _product.SupplierId; } }
+				        public int? CategoryId { get { return _product.CategoryId; } }
+				        public string? QuantityPerUnit {  get { return _product.QuantityPerUnit; } }
+				        public decimal? UnitPrice { get { return _product.UnitPrice; } }
+				        public short? UnitsInStock {  get { return _product.UnitsInStock; } }
+				        public short? UnitsOnOrder { get {  return _product.UnitsOnOrder; } }
+				        public bool Discontinued {  get { return _product.Discontinued; } }
+				        public virtual Category? Category { get { return _product.Category; } }
+				        public virtual Supplier? Supplier { get { return _product.Supplier; } }
+				        public virtual ICollection<OrderDetail> OrderDetails { get { return _product.OrderDetails; } }  
+				
+				    }
+				}
+			§ Créer fichier : ProductsVM.cs
+				using System.Collections.ObjectModel;
+				using ExamenJan2023.Models;
+				
+				namespace ExamenJan2023.ViewModels
+				{
+				    internal class ProductsVM
+				    {
+				        private NorthwindContext context = new NorthwindContext();
+				        private ObservableCollection<ProductModel>? _productsList;
+				        public ObservableCollection<ProductModel>? ProductsList
+				        {
+				            get { return _productsList ??= LoadProducts(); }
+				        }
+				        private ObservableCollection<ProductModel> LoadProducts()
+				        {
+				            ObservableCollection<ProductModel> localCollection = new ObservableCollection<ProductModel>();
+				            foreach (var item in context.Products.Where(p => !p.Discontinued))
+				            {
+				                localCollection.Add(new ProductModel(item));
+				            }
+				            return localCollection;
+				        }
+				    }
+				}
+		○ Dans /Views/MainWindow.xaml.cs : 
+			using System.Windows;
+			using ExamenJan2023.ViewModels;
+			
+			namespace ExamenJan2023
+			{
+			    public partial class MainWindow : Window
+			    {
+			        public MainWindow()
+			        {
+			            InitializeComponent();
+			            this.DataContext = new ProductsVM();
+			        }
+			    }
+			}
+		○ Dans /Views/MainWindow.xaml : 
+			<Window x:Class="ExamenJan2023.MainWindow"
+			        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+			        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			        xmlns:local="clr-namespace:ExamenJan2023"
+			        mc:Ignorable="d"
+			        Title="MainWindow" Height="450" Width="800">
+			    <Window.Resources>
+			        <DataTemplate x:Key="listTemplate">
+			            <StackPanel Margin="0 5 0 5">
+			                <Label Content="{Binding ProductId}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+			                <Label Content="{Binding ProductName}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+			            </StackPanel>
+			        </DataTemplate>
+			    </Window.Resources>
+			    <Grid>
+			        <ComboBox
+			            ItemsSource="{Binding ProductsList}"
+			            ItemTemplate="{StaticResource listTemplate}"
+			            SelectedValuePath="ProductId"
+			            SelectedIndex="0" 
+			            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+			    </Grid>
+			</Window>
+	• Maintenant que la combobox avec les produits est faite, on veut afficher les détails du produit sélectionné sous la combobox 
+		○ MainWindow.xaml : 
+			<Window x:Class="ExamenJan2023.MainWindow"
+			        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+			        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			        xmlns:local="clr-namespace:ExamenJan2023"
+			        mc:Ignorable="d"
+			        Title="MainWindow" Height="450" Width="800">
+			    <Window.Resources>
+			        <DataTemplate x:Key="listTemplate">
+			            <StackPanel Margin="0 5 0 5">
+			                <Label Content="{Binding ProductId}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+			                <Label Content="{Binding ProductName}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+			            </StackPanel>
+			        </DataTemplate>
+			    </Window.Resources>
+			    <Grid>
+			        <Grid.ColumnDefinitions>
+			            <ColumnDefinition Width="Auto"/>
+			            <ColumnDefinition Width="*"/>
+			        </Grid.ColumnDefinitions>
+			        <Grid.RowDefinitions>
+			            <RowDefinition Height="Auto"/>
+			            <RowDefinition Height="*"/>
+			            <RowDefinition Height="Auto"/>
+			        </Grid.RowDefinitions>
+			        <ComboBox
+			            Grid.Row="0"
+			            Grid.Column="0"
+			            x:Name="productComboBox"
+			            ItemsSource="{Binding ProductsList}"
+			            ItemTemplate="{StaticResource listTemplate}"
+			            SelectedValuePath="ProductId"
+			            SelectedIndex="0" 
+			            Margin="10"/>
+			        <Grid Grid.Row="1" Grid.Column="0" Margin="10">
+			                <Grid.ColumnDefinitions>
+			                    <ColumnDefinition Width="Auto"/>
+			                    <ColumnDefinition Width="Auto"/>
+			                </Grid.ColumnDefinitions>
+			
+			                <Grid.RowDefinitions>
+			                    <RowDefinition Height="Auto"/>
+			                    <RowDefinition Height="Auto"/>
+			                    <RowDefinition Height="Auto"/>
+			                    <RowDefinition Height="Auto"/>
+			                </Grid.RowDefinitions>
+			
+			                <TextBlock Text="ProductID" Grid.Row="0" Grid.Column="0" Margin="0,5"/>
+			                <TextBlock Text="{Binding SelectedItem.ProductId, ElementName=productComboBox}" Grid.Row="0" Grid.Column="1" Margin="0,5"/>
+			
+			                <TextBlock Text="ProductName" Grid.Row="1" Grid.Column="0" Margin="0,5"/>
+			                <TextBlock Text="{Binding SelectedItem.ProductName, ElementName=productComboBox}" Grid.Row="1" Grid.Column="1" Margin="0,5"/>
+			
+			                <TextBlock Text="Category" Grid.Row="2" Grid.Column="0" Margin="0,5"/>
+			                <TextBlock Text="{Binding SelectedItem.Category.CategoryName, ElementName=productComboBox}" Grid.Row="2" Grid.Column="1" Margin="0,5"/>
+			
+			                <TextBlock Text="Supplier" Grid.Row="3" Grid.Column="0" Margin="0,5"/>
+			                <TextBlock Text="{Binding SelectedItem.Supplier.ContactName, ElementName=productComboBox}" Grid.Row="3" Grid.Column="1" Margin="0,5"/>
+			            </Grid>
+			
+			        <Grid Grid.Row="2" Grid.Column="0" Margin="10">
+			        </Grid>
+			
+			        <Grid Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Margin="10">
+			        </Grid>
+			    </Grid>
+			</Window>
+		○ ProductsVM.cs :
+			using System.Collections.ObjectModel;
+			using System.ComponentModel;
+			using System.Runtime.CompilerServices;
+			using ExamenJan2023.Models;
+			
+			namespace ExamenJan2023.ViewModels
+			{
+			    internal class ProductsVM : INotifyPropertyChanged
+			    {
+			        private NorthwindContext context = new NorthwindContext();
+			        private ObservableCollection<ProductModel>? _productsList;
+			
+			        public ObservableCollection<ProductModel>? ProductsList
+			        {
+			            get { return _productsList ??= LoadProducts(); }
+			            set
+			            {
+			                if (_productsList != value)
+			                {
+			                    _productsList = value;
+			                    OnPropertyChanged();
+			                }
+			            }
+			        }
+			
+			        public event PropertyChangedEventHandler? PropertyChanged;
+			
+			        private ObservableCollection<ProductModel> LoadProducts()
+			        {
+			            ObservableCollection<ProductModel> localCollection = new ObservableCollection<ProductModel>();
+			            foreach (var item in context.Products.Where(p => !p.Discontinued))
+			            {
+			                localCollection.Add(new ProductModel(item));
+			            }
+			            return localCollection;
+			        }
+			
+			        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+			        {
+			            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+			        }
+			    }
+			}
+		○ Maintenant le bouton pour abandonner un produit : 
+			§ MainWindow.xaml : 
+				<Button Grid.Row="2" Grid.Column="0" Content="Abandonner le produit" Margin="10" Click="OnAbandonnerProduitClick"/>
+			§ MainWindow.xaml.cs : 
+
+
